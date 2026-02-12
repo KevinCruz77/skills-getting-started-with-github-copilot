@@ -40,7 +40,48 @@ document.addEventListener("DOMContentLoaded", () => {
         ul.className = "participants-list";
         (details.participants || []).forEach((email) => {
           const li = document.createElement("li");
-          li.textContent = email;
+          li.className = "participant-item";
+
+          const span = document.createElement("span");
+          span.className = "participant-email";
+          span.textContent = email;
+
+          const btn = document.createElement("button");
+          btn.className = "participant-remove";
+          btn.setAttribute("aria-label", `Remove ${email}`);
+          btn.title = "Remove participant";
+          btn.innerHTML = "&times;";
+
+          btn.addEventListener("click", async () => {
+            if (!confirm(`Remove ${email} from ${name}?`)) return;
+            try {
+              const res = await fetch(
+                `/activities/${encodeURIComponent(name)}/participants?email=${encodeURIComponent(email)}`,
+                { method: "DELETE" }
+              );
+              const data = await res.json();
+              if (res.ok) {
+                messageDiv.textContent = data.message;
+                messageDiv.className = "message success";
+                fetchActivities();
+              } else {
+                messageDiv.textContent = data.detail || "Failed to remove participant";
+                messageDiv.className = "message error";
+              }
+              messageDiv.classList.remove("hidden");
+              setTimeout(() => {
+                messageDiv.classList.add("hidden");
+              }, 5000);
+            } catch (err) {
+              messageDiv.textContent = "Failed to remove participant. Please try again.";
+              messageDiv.className = "message error";
+              messageDiv.classList.remove("hidden");
+              console.error("Error removing participant:", err);
+            }
+          });
+
+          li.appendChild(span);
+          li.appendChild(btn);
           ul.appendChild(li);
         });
         participantsWrap.appendChild(ul);
